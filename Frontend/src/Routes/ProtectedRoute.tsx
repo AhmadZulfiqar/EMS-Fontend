@@ -3,7 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import useApi from '../hooks/useApi'
-import Spinner from './Spinner'
+import Spinner from '../Components/Layout/Spinner'
 
 export type AuthStatus = 'loading' | 'valid' | 'invalid'
 

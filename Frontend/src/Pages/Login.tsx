@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import Spinner from './Spinner'
+import Spinner from '../Components/Layout/Spinner'
 import toast from 'react-hot-toast'
 import useApi from '../hooks/useApi'
 

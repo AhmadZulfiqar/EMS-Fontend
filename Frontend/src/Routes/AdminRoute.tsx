@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import useApi from '../hooks/useApi'
-import Spinner from './Spinner'
+import Spinner from '../Components/Layout/Spinner'
 
 type AuthStatus = 'loading' | 'valid' | 'invalid'
 

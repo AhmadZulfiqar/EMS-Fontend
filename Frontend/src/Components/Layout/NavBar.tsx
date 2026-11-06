@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import useRole from '../hooks/useRole.js'
-import useApi from '../hooks/useApi.js'
+import useRole from '../../hooks/useRole.js'
+import useApi from '../../hooks/useApi.js'
 import toast from 'react-hot-toast';
 
 const NavBar: React.FC = () => {

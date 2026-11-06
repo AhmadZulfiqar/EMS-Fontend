@@ -1,7 +1,10 @@
-        import axios from "axios";
+import axios from "axios";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { string } from "zod";
 
 const baseURL = "https://localhost:7200";
+
 export default function useApi() {
     const [apierror, setApiError] = useState<string | null>(null);
     
@@ -23,6 +26,7 @@ export default function useApi() {
             let status: number | null = null;
             let message: string = "Error";
         if (axios.isAxiosError(err)) {
+          
           status = err.response?.status ?? null;
 
           if (!err.response) {
@@ -33,6 +37,8 @@ export default function useApi() {
             message = "Forbidden";
           } else if (status === 404) {
             message = "Not Found";
+          }else if(status === 400){
+            message = "Bad Request";
           } else {
             message = err.response.data?.error ?? err.response.data?.details[0]?.description?? err.response.data?.message ?? message;
           }

@@ -10,16 +10,23 @@ function parseRole(stored) {
   }
 }
 
+// Kharab ya "undefined" value ho to crash nahi, bas null
+function safeParse(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function useRole() {
-
   const [userRole] = useState(() => parseRole(localStorage.getItem("userRole")));
+  const [user] = useState(() => safeParse("user"));
 
-  const [user] = useState(() => JSON.parse(localStorage.getItem("user")));
-  const [userAttendance] =useState(()=>JSON.parse(localStorage.getItem("attendance")))
   return {
     userRole,
     user,
-    userAttendance,
     isLogged: Boolean(user),
     hasRole: (...allowed) => allowed.includes(userRole),
   };

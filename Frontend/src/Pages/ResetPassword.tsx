@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react'
-import NavBar from './NavBar'
+import NavBar from '../Components/Layout/NavBar'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'

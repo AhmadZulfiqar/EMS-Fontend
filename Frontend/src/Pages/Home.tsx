@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import NavBar from './NavBar'
+import NavBar from '../Components/Layout/NavBar'
 import { useNavigate } from 'react-router-dom'
-import Spinner from "./Spinner"
+import Spinner from "../Components/Layout/Spinner"
 import toast from 'react-hot-toast'
 import useRole from '../hooks/useRole.js'
 import { z } from 'zod'
 import useApi from '../hooks/useApi'
+import DataTable from '../Components/Common/DataTable'
 
 const employeeSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters long"),
@@ -54,110 +55,74 @@ const Home: React.FC = () => {
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState<string>('');
+  const [totalPage, setTotalPage] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5)
+  const [totalCount, setTotalCount] = useState(0)
+  const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const { callApi } = useApi();
 
   const fetchEmployee = async (): Promise<void> => {
     setLoading(true);
     try {
-      const response = await callApi("api/Administration/get-all-users", "GET", null, true);
-      if (Array.isArray(response)) {
-        setEmployee(response)
+      const response = await callApi("api/Administration/get-all-users", "POST", {
+        page: currentPage,
+        pageSize,
+        search: appliedSearch,
+      }, true);
+
+      if (Array.isArray(response?.items)) {
+        setEmployee(response.items);
+        setTotalCount(response.totalCount);
+        setTotalPage(Math.ceil(response.totalCount / pageSize));
       }
     } catch (error: any) {
-      console.log("error", error.response)
+      console.log("error", error.response);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false)
-
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    debugger
-    e.preventDefault();
+    setLoading(true)
+    try {
+      if (editingId) {
+        const response = await callApi(`api/Auth/users/${editingId}`, "PUT", {
+          Name: name,
+          Email: email,
+        }, true)
+        if (response) {
+          toast.success("User Updated Successfully");
+          setName("");
+          setEmail("");
+          fetchEmployee();
+          setShowFormModal(false)
 
-    setErrors({});
-    if (!name || !email) {
-      toast.error('Please fill all the fields', {
-        position: "top-right"
-      });
-      return;
+        }
+      } else {
+        const response = await callApi(`api/Auth/register`, "POST", {
+          Name: name,
+          Email: email,
+          Password: password,
+        }, true)
+        if (response) {
+          toast.success("User Created Successfully");
+          setName("");
+          setEmail("");
+          setPassword("");
+          fetchEmployee();
+          setShowFormModal(false)
+        }
+      }
+    } catch (error: any) {
+      toast.error(error?.message)
+    } finally {
+      setLoading(false);
     }
-
-
-    if (editingId) {
-      const validation = EditEmployeeSchema.safeParse({ name, email });
-
-      if (!validation.success) {
-        const fieldErrors: Record<string, string> = {};
-        validation.error.issues.forEach((issue) => {
-          fieldErrors[issue.path[0] as string] = issue.message;
-        });
-        setErrors(fieldErrors);
-        return;
-      }
-      setLoading(true);
-      try {
-        const response = await callApi(
-          `api/Auth/users/${editingId}`,
-          "PUT",
-          { name, email },
-          true
-        );
-        console.log("response", response);
-        toast.success("Employee updated successfully");
-        setEditingId(null);
-        fetchEmployee();
-        setName('');
-        setEmail('');
-        setPhone('');
-        setRole('');
-        setPassword('');
-      } catch (error: any) {
-        toast.error(error?.message);
-        setLoading(false);
-      }
-    } else {
-      const validation = employeeSchema.safeParse({ name, email, password });
-
-      if (!validation.success) {
-        const fieldErrors: Record<string, string> = {};
-        validation.error.issues.forEach((issue) => {
-          fieldErrors[issue.path[0] as string] = issue.message;
-        });
-        setErrors(fieldErrors);
-        return;
-      }
-      if (!password) {
-        toast.error('Please fill all the fields', { position: "top-right" });
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const response = await callApi(
-          "api/Auth/register",
-          "POST",
-          { name, email, password },
-          true
-        );
-        console.log("response", response);
-        toast.success("Employee added successfully");
-        fetchEmployee();
-        setName('');
-        setEmail('');
-        setPhone('');
-        setRole('');
-        setPassword('');
-      } catch (error: any) {
-        toast.error(error?.message);
-        setLoading(false);
-      }
-
-    }
-    setLoading(false);
-    setShowFormModal(false);
-  };
-
+  }
   const handleEdit = (emp: EmployeeRecord): void => {
+    debugger
     setShowFormModal(true);
     setEditingId(emp.id);
     setName(emp.name);
@@ -187,10 +152,39 @@ const Home: React.FC = () => {
       setDeleteId('');
     }
   };
+  const tableSearch = (search: string) => {
+    setCurrentPage(1);
+    setAppliedSearch(search.trim());
+  }
+  const onPageChange = (page: number) => {
+    setCurrentPage(page);
+  }
+  const onPageSizeChange = (pageSize: number) => {
+    setCurrentPage(1);
+    setPageSize(pageSize);
+  }
 
+  
   useEffect(() => {
     fetchEmployee();
-  }, []);
+  }, [currentPage, pageSize, appliedSearch]);
+
+  const columns = [
+    { header: "Name", accessor: "name" },
+    { header: "Email", accessor: "email" },
+    { header: "Role", accessor: "role" },
+  ];
+
+  const actions = [
+    {
+      label: "Edit",
+      onClick: (emp: EmployeeRecord) => handleEdit(emp)
+    },
+    {
+      label: "Delete",
+      onClick: (emp: EmployeeRecord) => {setShowDelete(true);setDeleteId(emp.id);}
+    }
+  ]
 
   if (loading) {
     return (
@@ -203,7 +197,7 @@ const Home: React.FC = () => {
   return (
     <>
       <NavBar />
-      <div className='p-6'>
+      <div className='px-6 py-6'>
         <div className='flex items-center justify-between px-6 py-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm mb-6'>
           <div>
             <h1 className='text-2xl font-bold text-slate-900 tracking-tight'>Employee Management System</h1>
@@ -328,51 +322,21 @@ const Home: React.FC = () => {
           </div>
         )}
         <br />
-        <div className=''>
-          <h2 className='text-2xl font-bold mb-4'>Employee List</h2>
-          <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-            <table className="w-full border-collapse bg-white text-left text-sm text-gray-500">
-              <thead className="bg-gray-100/75 text-gray-700 uppercase tracking-wider text-xs font-semibold">
-                <tr>
-                  <th className="px-6 py-3.5 border-b border-gray-200">Name</th>
-                  <th className="px-6 py-3.5 border-b border-gray-200">Email</th>
-                  <th className="px-6 py-3.5 border-b border-gray-200">Role</th>
-                  <th className="px-6 py-3.5 border-b border-gray-200 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {employee.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{emp.name}</td>
-                    <td className="px-6 py-4 text-gray-600">{emp.email}</td>
-                    <td className="px-6 py-4 text-gray-600">{emp.role}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="inline-flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(emp)}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors duration-200 cursor-pointer"
-                        >
-                          Edit
-                        </button>
-                        {(userRole === 'Admin' || userRole === 'Administrator') && (
-                          <button
-                            onClick={() => {
-                              setShowDelete(true);
-                              setDeleteId(emp.id);
-                            }}
-                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors duration-200 cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable
+          columns={columns}
+          actions={actions}
+          tableData={employee}
+          tableSearch={tableSearch}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+          tableCurrrntPage={currentPage}
+          tableTotalPage={totalPage}
+          tableTotalCount={totalCount}
+          tablePageSize={pageSize}
+
+
+        />
+
       </div>
     </>
   )

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import NavBar from './NavBar'
+import NavBar from '../Components/Layout/NavBar'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import useApi from '../hooks/useApi'
-import Spinner from './Spinner'
+import Spinner from '../Components/Layout/Spinner'
 
 export interface RoleItem {
   id?: string;
