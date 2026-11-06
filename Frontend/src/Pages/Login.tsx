@@ -3,7 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Spinner from '../Components/Layout/Spinner'
 import toast from 'react-hot-toast'
-import useApi from '../hooks/useApi'
+
+import {AuthService} from "../Services/authService"
+import { EmployeeLoginDto } from '../Components/Common/Models/authDto'
+import { EmployeeService } from '../Services/employeeservice'
+import { getApiError } from "../utils/errorHandler";
 
 export interface LoginResponseData {
   id: string;
@@ -23,28 +27,20 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const { callApi } = useApi();
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
   
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await callApi(
-        'api/Auth/login',
-        'POST',
-        { email, password },
-        true
-      );
-
+      const params:EmployeeLoginDto={
+        email:email,
+        password:password
+      }
+      const response = await AuthService.employeeLogin(params);
       if (response) {
-        const role = await callApi(
-          `api/Administration/get-user-roles/${response.id}`,
-          'GET',
-          null,
-          true
-        );
-
+        const role = await EmployeeService.getUserRoles(response.id);
         if (role && role.length > 0) {
           localStorage.setItem("userRole", JSON.stringify(role[0]));
         }
@@ -65,8 +61,8 @@ const Login: React.FC = () => {
         navigate('/attendance');
       }
     } catch (error:any) {
-      console.error(error);
-      toast.error(error.message);
+      let errorMessage =getApiError(error);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

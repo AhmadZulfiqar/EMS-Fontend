@@ -3,8 +3,12 @@ import NavBar from '../Components/Layout/NavBar'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import useApi from '../hooks/useApi'
+
 import Spinner from '../Components/Layout/Spinner'
+import { EmployeeService } from '../Services/employeeservice'
+import { getApiError } from "../utils/errorHandler";
+import { assignRole, getAllTableDataDto } from '../Components/Common/Models/EmployeeDto'
+
 
 export interface Employee {
     id: string;
@@ -49,24 +53,23 @@ const AssignEmployee: React.FC = () => {
     const [roles, setRoles] = useState<RolesList[]>([]);
     const [selectedRoleId, setSelectedRoleId] = useState<string>("ALL"); // State for filtering by role
 
-    const { callApi } = useApi();
+
 
     const fetchEmployee = async (): Promise<void> => {
         setLoading(true);
         try {
-            const res = await callApi("api/Administration/get-all-users", "POST", 
-                {
+            const param:getAllTableDataDto={
                     page: 1,
                     pageSize: 100,
-                }, 
-                true
-            );
-            const resRoles = await callApi("api/Administration/get-roles", "GET", null, true);
+                    search: "",  
+                  }
+            const res = await EmployeeService.getAll(param);
+            const resRoles = await EmployeeService.fetchRoles();
             setEmployee(res.items);
             setRoles(resRoles);
         } catch (error: any) {
-            console.log("Error", error.message);
-            toast.error(error?.message);
+            let errorMessage = getApiError(error);
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -77,7 +80,11 @@ const AssignEmployee: React.FC = () => {
         console.log("employeeId", employeeId);
         setLoading(true);
         try {
-            let res = await callApi("api/Administration/assign-role", "POST", { userId: employeeId, roleId: targetRoleId }, true);
+            const params:assignRole={
+                userId:employeeId,
+                roleId:targetRoleId,
+            }
+            let res = await EmployeeService.assignRole(params);
             if (res) {
                 toast.success(res?.message);
                 await fetchEmployee();

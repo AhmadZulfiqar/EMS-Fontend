@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import NavBar from '../Components/Layout/NavBar'
-import axios from 'axios'
+
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import useApi from '../hooks/useApi'
+
 import Spinner from '../Components/Layout/Spinner'
+import { EmployeeService } from '../Services/employeeservice'
+import {createRole} from '../Components/Common/Models/EmployeeDto'
+import { getApiError } from '../utils/errorHandler'
 
 export interface RoleItem {
   id?: string;
@@ -23,13 +26,13 @@ const CreateRole: React.FC = () => {
   const [roleInput, setRoleInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-  const { callApi } = useApi()
+  
 
   const [roles, setRoles] = useState<RoleEntry[]>([]);
 
   const fetchRoles = async (): Promise<void> => {
     try {
-      const res = await callApi("api/Administration/get-roles", "GET", null, true)
+      const res = await EmployeeService.fetchRoles();
       if (Array.isArray(res)) {
         setRoles(res)
       }
@@ -49,21 +52,25 @@ const CreateRole: React.FC = () => {
     setLoading(true);
     if(!roleInput.trim()) return;
     try{
-      const res= await callApi("api/Administration/create-role","POST",{roleName:roleInput},true);
+      const params: createRole= {
+        roleName:roleInput
+      }
+      const res= await EmployeeService.createRole(params);
       fetchRoles()
       toast.success(res.message)
     }catch(error:any){
-      toast.error(error?.message)
+      let errorMessage =getApiError(error);
+      toast.error(errorMessage);
 
     }
     setLoading(false);
     setRoleInput('');
   };
 
-  const handleDelete = async (id: string | number): Promise<void> => {
+  const handleDelete = async (id: string |number): Promise<void> => {
     setLoading(true);
     try{
-      const res= await callApi(`api/Administration/delete-role/${id}`,"DELETE",null,true);
+      const res= await EmployeeService.deleteRoles(id);
       fetchRoles()
       toast.success(res.message)
     }catch(error:any){

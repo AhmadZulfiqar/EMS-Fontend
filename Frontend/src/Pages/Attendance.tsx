@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import NavBar from "../Components/Layout/NavBar";
 import useRole from "../hooks/useRole";
-import useApi from "../hooks/useApi";
+
 import toast from "react-hot-toast";
 import Spinner from "../Components/Layout/Spinner";
 import DataTable from "../Components/Common/DataTable";
+import { AttendanceService } from "../Services/attendanceService";
+import { getApiError } from "../utils/errorHandler";
+import { FetchEmployeeAttendance, CheckAttendance, ClockIn, ClockOut } from '../Components/Common/Models/AttendanceDto'
 
 export interface AttendanceRecord {
   id?: string;
@@ -47,7 +50,7 @@ const Attendance: React.FC = () => {
   );
 
   const { user } = useRole();
-  const { callApi } = useApi();
+
 
   const formatDate = (date: Date = new Date()): string => {
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -70,32 +73,31 @@ const Attendance: React.FC = () => {
 
 
   const formatClock = (dateInput: Date | string | null | undefined): string => {
-  if (!dateInput) return "--:--:--"; 
+    if (!dateInput) return "--:--:--";
 
-  const date = new Date(dateInput);
+    const date = new Date(dateInput);
 
-  if (isNaN(date.getTime())) return "--:--:--";
+    if (isNaN(date.getTime())) return "--:--:--";
 
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-};
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
   const [isSameData, setIsSameData] = useState(false);
   const checkAttendance = async () => {
 
     setLoading(true);
     try {
-      let res = await callApi("api/Attendance/check-today", "POST",
-        {
-          employeeId: user?.id,
-          date: formatDate(new Date()),
-        },
 
-      )
+      const params: CheckAttendance = {
+        employeeId: user?.id,
+        date: formatDate(new Date()),
+      }
+      let res = await AttendanceService.checkTotdayAttendance(params)
 
-      console.log(res);
+
       if (res) {
         let CIT = new Date(res.checkInTime);
         let COT = new Date(res.checkOutTime);
@@ -107,7 +109,7 @@ const Attendance: React.FC = () => {
           set_check_In_Time(CIT)
           set_check_Out_Time(COT)
           setTotalHours(res.totalHours || "--")
- 
+
         }
         else if (res.clockInTime == false && res.clockOutTime == true) {
           setIsClockedIn(false)
@@ -130,29 +132,23 @@ const Attendance: React.FC = () => {
         }
       }
     } catch (error: any) {
-      toast.error(error?.message);
+      let errorMessage = getApiError(error);
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
   };
-  const tableSearch = (search: string) => {
-    setCurrentPage(1);
-    setAppliedSearch(search.trim());
-  }
+
   const fetchData = async () => {
     if (!user?.id) return;
     try {
-      let res = await callApi(
-        `api/Attendance/attendance/get-all`,
-        "POST",
-        {
-          employeeId: user?.id,
-          page: currentPage,
-          pageSize: pageSize,
-          search: appliedSearch,
-        },
-        true,
-      );
+      const params: FetchEmployeeAttendance = {
+        employeeId: user?.id,
+        page: currentPage,
+        pageSize: pageSize,
+        search: appliedSearch,
+      }
+      let res = await AttendanceService.fetchUserAttendance(params);
       if (res) {
         setEmployeeDetail(res.items);
         setCurrentPage(res?.page)
@@ -160,7 +156,8 @@ const Attendance: React.FC = () => {
         setPageSize(res?.pageSize)
       }
     } catch (error: any) {
-      toast.error(error?.message);
+      let errorMessage = getApiError(error);
+      toast.error(errorMessage)
     }
   };
 
@@ -171,44 +168,32 @@ const Attendance: React.FC = () => {
     return diff;
   }
 
-  // Handle Clock In
+ 
   const handleClockIn = async () => {
     setLoading(true);
     const now = new Date();
 
     setClockInDateObj(now);
     try {
-      const payload = {
+      const payload: ClockIn = {
         employeeId: user?.id,
         date: now,
         checkInTime: now,
         status: "Present",
         formatDate: formatDate(now),
       };
-      const res = await callApi(
-        "api/Attendance/clock-in",
-        "POST",
-        {
-          employeeId: user?.id,
-          date: now,
-          checkInTime: now,
-          status: "Present",
-          formatDate: formatDate(now),
-        },
-        true,
-      );
+      const res = await AttendanceService.clockInAttendance(payload);
       if (res) {
-        localStorage.setItem("attendance", JSON.stringify(payload));
         toast.success("Clock In Successfully");
         setClockInTime(formatClock(now));
-
         setClockOutTime(null);
         setTotalHours("--");
-        fetchData(); // Refresh table data
+        fetchData(); 
         checkAttendance();
       }
     } catch (error: any) {
-      toast.error(error?.message);
+      let errorMessage = getApiError(error);
+      toast.error(errorMessage)
     } finally {
       setLoading(false);
     }
@@ -220,16 +205,13 @@ const Attendance: React.FC = () => {
     const now = new Date();
     let diff = calculateTotalHours(now);
     try {
-      const res = await callApi(
-        "api/Attendance/clock-out",
-        "PUT",
-        {
-          employeeId: user?.id,
-          clockOutTime: now,
-          clockInTime: check_In_Time,
-          totalHours: dbTotalHours,
-        },
-        true
+      const params: ClockOut = {
+        employeeId: user?.id,
+        clockOutTime: now,
+        clockInTime: check_In_Time,
+        totalHours: dbTotalHours,
+      }
+      const res = await AttendanceService.ClockOutAttendance(params
       );
       if (res) {
         toast.success("Clock Out Successfully");
@@ -239,62 +221,51 @@ const Attendance: React.FC = () => {
         checkAttendance();
       }
     } catch (error: any) {
-      toast.error(error?.message);
+      let errorMessage = getApiError(error);
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
-  const onPageChange = async (page: number) => {
-    setLoading(true);
-    try {
-      const response = await callApi('api/Attendance/attendance/get-all', 'POST', { employeeId: user?.id, page: page, pageSize: pageSize }, true);
-      setEmployeeDetail(response.items);
-      setCurrentPage(response?.page)
-      setTotalPage(Math.ceil(response?.totalCount / pageSize))
-      setPageSize(response?.pageSize)
-    } catch (error: any) {
-      console.log("Error", error.message)
-      toast.error(error?.message)
-    } finally {
-      setLoading(false);
-    }
+
+  const tableSearch = (search: string) => {
+    setCurrentPage(1);
+    setAppliedSearch(search.trim());
   }
-  const onPageSizeChange = async (pageSize: number) => {
-    setLoading(true);
-    try {
-      const response = await callApi('api/Attendance/attendance/get-all', 'POST', { employeeId: user?.id, page: currentPage, pageSize: pageSize }, true);
-      setEmployeeDetail(response.items);
-      setCurrentPage(response?.page)
-      setTotalPage(Math.ceil(response?.totalCount / pageSize))
-      setPageSize(response?.pageSize)
-    } catch (error: any) {
-      console.log("Error", error.message)
-      toast.error(error?.message)
-    } finally {
-      setLoading(false);
-    }
+  const onPageChange = (page: number) => {
+    setCurrentPage(page);
+  }
+  const onPageSizeChange = (pageSize: number) => {
+    setCurrentPage(1);
+    setPageSize(pageSize);
   }
   const columns = [
-    { header: "Date",
+    {
+      header: "Date",
       accessor: "clockInTime",
       render: (row: any) => formatDate(new Date(row.clockInTime))
     },
-    { header: "Clock In Time", accessor: "clockInTime",
+    {
+      header: "Clock In Time", accessor: "clockInTime",
       render: (row: any) => formatClock(new Date(row.clockInTime))
-     },
-    { header: "Clock Out Time", accessor: "clockOutTime" ,
+    },
+    {
+      header: "Clock Out Time", accessor: "clockOutTime",
       render: (row: any) => formatClock(new Date(row.clockOutTime))
     },
-    { header: "Total Hours", accessor: "totalHours",
-      render: (row: any) => row.totalHours==""?"--:--:--":row.totalHours
-     },
-    { header: "Status", accessor: "status",
-       
-     },
+    {
+      header: "Total Hours", accessor: "totalHours",
+      render: (row: any) => row.totalHours == "" ? "--:--:--" : row.totalHours
+    },
+    {
+      header: "Status", accessor: "status",
+
+    },
   ];
 
-  useEffect(() => {``
+  useEffect(() => {
+    ``
     if (check_In_Time && check_Out_Time) {
       return
     } else if (!check_Out_Time && check_In_Time) {
@@ -311,7 +282,7 @@ const Attendance: React.FC = () => {
   useEffect(() => {
     checkAttendance();
     fetchData();
-  }, [appliedSearch,currentPage,pageSize]);
+  }, [appliedSearch, currentPage, pageSize]);
 
 
 

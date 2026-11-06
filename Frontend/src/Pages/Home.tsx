@@ -6,8 +6,11 @@ import Spinner from "../Components/Layout/Spinner"
 import toast from 'react-hot-toast'
 import useRole from '../hooks/useRole.js'
 import { z } from 'zod'
-import useApi from '../hooks/useApi'
+
 import DataTable from '../Components/Common/DataTable'
+import { EmployeeService } from '../Services/employeeservice'
+import { getApiError } from "../utils/errorHandler";
+import {updateEmployee,createEmployee,getAllTableDataDto} from '../Components/Common/Models/EmployeeDto'
 
 const employeeSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters long"),
@@ -61,16 +64,17 @@ const Home: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0)
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
-  const { callApi } = useApi();
+
 
   const fetchEmployee = async (): Promise<void> => {
     setLoading(true);
     try {
-      const response = await callApi("api/Administration/get-all-users", "POST", {
+      const param:getAllTableDataDto={
         page: currentPage,
-        pageSize,
-        search: appliedSearch,
-      }, true);
+        pageSize: pageSize,
+        search: appliedSearch,  
+      }
+      const response = await EmployeeService.getAll(param);
 
       if (Array.isArray(response?.items)) {
         setEmployee(response.items);
@@ -78,7 +82,8 @@ const Home: React.FC = () => {
         setTotalPage(Math.ceil(response.totalCount / pageSize));
       }
     } catch (error: any) {
-      console.log("error", error.response);
+      let errorMessage =getApiError(error);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -88,10 +93,11 @@ const Home: React.FC = () => {
     setLoading(true)
     try {
       if (editingId) {
-        const response = await callApi(`api/Auth/users/${editingId}`, "PUT", {
+        const params: updateEmployee = {
           Name: name,
           Email: email,
-        }, true)
+        }
+        const response = await EmployeeService.updateEmployee(editingId,params)
         if (response) {
           toast.success("User Updated Successfully");
           setName("");
@@ -101,11 +107,12 @@ const Home: React.FC = () => {
 
         }
       } else {
-        const response = await callApi(`api/Auth/register`, "POST", {
-          Name: name,
-          Email: email,
-          Password: password,
-        }, true)
+        const params : createEmployee={
+          Name:name,
+          Email:email,
+          Password:password
+        }
+        const response = await EmployeeService.createEmployee(params)
         if (response) {
           toast.success("User Created Successfully");
           setName("");
@@ -116,7 +123,8 @@ const Home: React.FC = () => {
         }
       }
     } catch (error: any) {
-      toast.error(error?.message)
+      let errorMessage =getApiError(error);
+      toast.error(errorMessage)
     } finally {
       setLoading(false);
     }
@@ -135,17 +143,14 @@ const Home: React.FC = () => {
     if (!id) return;
     setLoading(true);
     try {
-      const response = await callApi(
-        `api/Auth/users/${id}`,
-        "DELETE",
-        null,
-        true
-      );
-      console.log("response", response);
-      toast.success("Employee deleted successfully");
+      const response = await EmployeeService.deleteEmployee(id)
+      if(response){
+        toast.success(response.message);
+      }
       fetchEmployee();
     } catch (error: any) {
-      toast.error(error?.message);
+      let errorMessage =getApiError(error);
+      toast.error(errorMessage)
     } finally {
       setLoading(false);
       setShowDelete(false);

@@ -3,13 +3,18 @@ import React, { useState, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import useApi from '../hooks/useApi'
+
+import {AuthService} from "../Services/authService"
+import { ForgotPasswordDto } from '../Components/Common/Models/authDto'
+
+
+
 
 const ForgotPassword: React.FC = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
-    const {callApi} = useApi();
+
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -21,7 +26,10 @@ const ForgotPassword: React.FC = () => {
 
         setLoading(true);
         try{
-            const res= await callApi("api/Administration/forgot-password","POST",{email:email},true);
+            const params:ForgotPasswordDto={
+                email:email,
+            }
+            const res= await AuthService.ForgotPassword(params);
             toast.success(res?.message || "Password reset link sent successfully!");
             navigate('/login');
         }catch(error:any){

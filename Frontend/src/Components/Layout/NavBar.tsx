@@ -1,24 +1,27 @@
 import React from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import useRole from '../../hooks/useRole.js'
-import useApi from '../../hooks/useApi.js'
+
 import toast from 'react-hot-toast';
+import {AuthService} from "../../Services/authService"
+import { getApiError } from '../../utils/errorHandler.js';
 
 const NavBar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation(); // 1. Get current location
   const { userRole, isLogged } = useRole();
-  const { callApi } = useApi();
+
 
   const handleLogout = async (): Promise<void> => {
     try {
-      const res = await callApi("api/Auth/logout", "POST", null, true);
+      const res = await AuthService.logout();
       toast.success(res.message);
       localStorage.removeItem('userRole');
       localStorage.removeItem('user');
       navigate("/login");
     } catch (error: any) {
-      toast.error(error?.message);
+      let errorMessage =getApiError(error);
+      toast.error(errorMessage);
     }
   };
 

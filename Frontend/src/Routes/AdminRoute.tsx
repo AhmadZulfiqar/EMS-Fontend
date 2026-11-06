@@ -1,8 +1,10 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import useApi from '../hooks/useApi'
+
 import Spinner from '../Components/Layout/Spinner'
+import {AuthService} from "../Services/authService"
+import { getApiError } from "../utils/errorHandler";
 
 type AuthStatus = 'loading' | 'valid' | 'invalid'
 
@@ -10,12 +12,12 @@ const ALLOWED_ROLES: string[] = ['Admin', 'HR','Administrator']
 
 const AdminRoute = () => {
   const [status, setStatus] = useState<AuthStatus>('loading')
-  const { callApi } = useApi();
+
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        await callApi("api/Auth/me", "GET", null, true);
+        await AuthService.checkAuth();
 
         const stored = localStorage.getItem('userRole')
         const role: string | null = stored ? JSON.parse(stored) : null
@@ -29,7 +31,8 @@ const AdminRoute = () => {
 
         setStatus('valid')
       } catch (error) {
-        toast.error('You are not authorized to access this page')
+        let errorMessage =getApiError(error);
+      toast.error(errorMessage);
         setStatus('invalid')
       }
     }

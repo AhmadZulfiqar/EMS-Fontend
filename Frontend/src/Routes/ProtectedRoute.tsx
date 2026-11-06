@@ -2,24 +2,28 @@ import React, { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import useApi from '../hooks/useApi'
+
 import Spinner from '../Components/Layout/Spinner'
+
+import {AuthService} from "../Services/authService"
+import { getApiError } from "../utils/errorHandler";
 
 export type AuthStatus = 'loading' | 'valid' | 'invalid'
 
 const ProtectedRoute: React.FC = () => {
   const [status, setStatus] = useState<AuthStatus>('loading')
-  const {callApi} = useApi();
+
 
   useEffect(() => {
     const checkAuth = async (): Promise<void> => {
       try {
         // If this request succeeds, the user has a valid authenticated session
-        await callApi("api/Auth/me","GET",null,true);
+        await AuthService.checkAuth();
   
         setStatus('valid')
       } catch (error) {
-        toast.error("Please login to access this page")
+        let errorMessage =getApiError(error);
+      toast.error(errorMessage);
         setStatus('invalid')
       }
     }

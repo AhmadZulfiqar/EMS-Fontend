@@ -3,8 +3,11 @@ import NavBar from '../Components/Layout/NavBar'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import useApi from '../hooks/useApi'
+
 import DataTable from '../Components/Common/DataTable'
+import { EmployeeService } from '../Services/employeeservice'
+import { getApiError } from "../utils/errorHandler";
+import { getAllTableDataDto } from '../Components/Common/Models/EmployeeDto'
 
 interface Member {
     id: string;
@@ -23,45 +26,50 @@ const AllMembers = () => {
     const [totalCount, setTotalCount] = useState(0)
     const navigate = useNavigate();
     const [appliedSearch, setAppliedSearch] = useState('');
-    const { callApi } = useApi();
+
 
     const fetchMembers = async () => {
         setLoading(true);
         try {
-            const response = await callApi('api/Administration/all-users', 'POST', { page: currentPage, pageSize: pageSize , search:appliedSearch }, true);
+            const param: getAllTableDataDto = {
+                page: currentPage,
+                pageSize: pageSize,
+                search: appliedSearch,
+            }
+            const response = await EmployeeService.allMembers(param);
             setMembers(response.items);
             setCurrentPage(response?.page)
             setTotalPage(Math.ceil(response?.totalCount / pageSize))
             setPageSize(response?.pageSize)
             setTotalCount(response?.totalCount)
         } catch (error: any) {
-            console.log("Error", error.message)
-            toast.error(error?.message)
+            let errorMessage = getApiError(error);
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
     };
-    
-    const tableSearch = (search:string)=>{
+
+    const tableSearch = (search: string) => {
         setCurrentPage(1);
         setAppliedSearch(search.trim());
     }
-    const onPageChange =(page:number)=>{
-       setCurrentPage(page);     
+    const onPageChange = (page: number) => {
+        setCurrentPage(page);
     }
-    const onPageSizeChange =(pageSize:number)=>{
+    const onPageSizeChange = (pageSize: number) => {
         setCurrentPage(1);
         setPageSize(pageSize);
     }
 
-   useEffect(() => {
-         fetchMembers();
-       }, [currentPage, pageSize, appliedSearch]);
+    useEffect(() => {
+        fetchMembers();
+    }, [currentPage, pageSize, appliedSearch]);
     const columns = [
         { header: "Name", accessor: "name" },
         { header: "Email", accessor: "email" },
         { header: "Role", accessor: "roles" },
-        
+
     ];
 
     if (loading) {
@@ -90,7 +98,7 @@ const AllMembers = () => {
                 tablePageSize={pageSize}
             />
 
-            
+
         </div>
     );
 };

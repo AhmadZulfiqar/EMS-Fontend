@@ -1,14 +1,18 @@
 import React, { useState, useEffect, FormEvent } from 'react'
-import NavBar from '../Components/Layout/NavBar'
+
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+
 import toast from 'react-hot-toast'
-import useApi from '../hooks/useApi'
+
+import {AuthService} from "../Services/authService"
+import {ResetPassordDto } from '../Components/Common/Models/authDto'
+
+import { getApiError } from "../utils/errorHandler";
 
 const ResetPassword: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const {callApi}=useApi();
+
 
     const token = searchParams.get("token");
     const email = searchParams.get("email");
@@ -42,12 +46,18 @@ const ResetPassword: React.FC = () => {
 
         setLoading(true);
         try{
-            const res= await callApi("api/Administration/reset-password","POST",{email:email,token:token,newPassword:password},true);
+            const params:ResetPassordDto={
+                email:email,
+                token:token,
+                newPassword:password,
+            }
+            const res= await AuthService.ResetPassword(params);
             toast.success(res?.message);
             navigate('/login');
         }
         catch(error:any){
-            toast.error(error?.message);
+            let errorMessage =getApiError(error);
+      toast.error(errorMessage);
         }finally{
             setLoading(false);
         }
