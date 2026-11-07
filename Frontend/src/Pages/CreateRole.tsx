@@ -74,7 +74,8 @@ const CreateRole: React.FC = () => {
       fetchRoles()
       toast.success(res.message)
     }catch(error:any){
-      toast.error(error?.message)
+      let errorMessage =getApiError(error);
+      toast.error(errorMessage);
     }finally{
       setLoading(false);
     }

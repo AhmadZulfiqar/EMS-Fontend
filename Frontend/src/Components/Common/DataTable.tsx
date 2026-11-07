@@ -13,6 +13,7 @@ export interface Action<T> {
     label: string;
     onClick: (row: T) => void;
     className?: string;
+    render?: (row: T) => React.ReactNode;
 }
 
 interface DataTableProps<T> {
@@ -26,6 +27,8 @@ interface DataTableProps<T> {
     tableCurrrntPage: number;
     tablePageSize: number;
     tableTotalCount: number;
+    tableName?: string,
+    searchPlaceHolder?: string,
 }
 export function DataTable<T extends { id: string }>({
     tableData,
@@ -38,6 +41,8 @@ export function DataTable<T extends { id: string }>({
     tableCurrrntPage,
     tablePageSize,
     tableTotalCount,
+    tableName = "Employee List",
+    searchPlaceHolder = "Search",
 }: DataTableProps<T>) {
 
 
@@ -55,27 +60,33 @@ export function DataTable<T extends { id: string }>({
             <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                 <div>
                     <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pt-5 px-5">
-                        <h2 className="text-2xl font-bold">Employee List</h2>
+                        <h2 className="text-2xl font-bold">{tableName}</h2>
                         <div className="flex gap-3">
                             <input
                                 className="border border-gray-300 rounded-md w-72 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
                                 type="text"
                                 name="search"
                                 id="search"
-                                placeholder="Search by name"
+                                placeholder={searchPlaceHolder}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        tableSearch(search);
+                                    }
+                                }}
                             />
                             <button
                                 className="border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-md px-4 py-2 text-sm transition-colors"
                                 onClick={() => tableSearch(search)}
+                                onKeyDown={(e) => e.key == "Enter" && tableSearch(search)}
                             >
                                 Search
                             </button>
                         </div>
                     </div>
 
-                    {/* Table */}
+
                     <table className="w-full border-collapse border border-gray-300 text-left text-sm">
                         <thead>
                             <tr className="border-b border-gray-300 bg-gray-50">
@@ -98,21 +109,25 @@ export function DataTable<T extends { id: string }>({
                                     <tr key={row.id} className="border-b border-gray-300 hover:bg-gray-50">
                                         {columns.map((col: any, colIndex: number) => (
                                             <td key={colIndex} className="p-3 border border-gray-300">
-                                                {col.render? col.render(row) :row[col.accessor || "--"]}
+                                                {col.render ? col.render(row) : row[col.accessor || "--"]}
                                             </td>
                                         ))}
 
                                         {actions && actions.length > 0 && (
                                             <td className="p-3 border border-gray-300 text-right">
                                                 <div className="inline-flex items-center justify-end gap-2">
+
                                                     {actions.map((action: any, index: number) => (
-                                                        <button
-                                                            key={index}
-                                                            className={action.className || "px-2.5 py-1 border border-gray-300 rounded text-xs hover:bg-gray-100 transition-colors"}
-                                                            onClick={() => action.onClick(row)}
-                                                        >
-                                                            {action.label}
-                                                        </button>
+                                                        
+                                                        <>
+                                                            <button
+                                                                key={index}
+                                                                className={action.className || "px-2.5 py-1 border border-gray-300 rounded text-xs hover:bg-gray-100 transition-colors"}
+                                                                onClick={() => action.onClick(row)}
+                                                            >
+                                                                {action.label}
+                                                            </button>
+                                                        </>
                                                     ))}
                                                 </div>
                                             </td>
@@ -136,7 +151,7 @@ export function DataTable<T extends { id: string }>({
                             <tr>
                                 <td colSpan={100} className="p-3 border border-gray-300 bg-gray-50">
                                     <div className="flex flex-wrap items-center justify-between gap-4">
-                                        {/* Page Info & Page Size Selector */}
+
                                         <div className="flex items-center gap-4">
                                             <div>
                                                 Page <span className="font-semibold">{tableCurrrntPage}</span> of{" "}
@@ -162,7 +177,7 @@ export function DataTable<T extends { id: string }>({
                                             </div>
                                         </div>
 
-                                        {/* Navigation Buttons */}
+
                                         <div className="flex items-center gap-1">
                                             <button
                                                 onClick={() => onPageChange(1)}

@@ -338,6 +338,8 @@ const Home: React.FC = () => {
           tableTotalPage={totalPage}
           tableTotalCount={totalCount}
           tablePageSize={pageSize}
+          tableName='Employee List'
+          searchPlaceHolder='Search by name'
 
 
         />

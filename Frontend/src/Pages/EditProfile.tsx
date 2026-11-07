@@ -39,38 +39,9 @@ const EditProfile: React.FC = () => {
     }
   }, []);
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>,
-  ): Promise<void> => {
-    e.preventDefault();
-    try {
-      const payload: UpdateProfilePayload = {
-        username: username,
-        password: password,
-        email: email,
-      };
-
-      const response = await axios.post<UpdateProfileResponse>(
-        "http://localhost:5291/api/User/Update-profile",
-        payload,
-      );
-
-      if (response.status === 200) {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data));
-        setSuccessMessage("Profile updated successfully!");
-        navigate("/profile");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+ 
   //function to add two numbers
-  const handleaddnew =()=>{
-    
-  }
+ 
 
   return (
     <>
@@ -107,7 +78,7 @@ const EditProfile: React.FC = () => {
             <h2 className="text-lg font-semibold">Account Credentials</h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <form className="p-6 space-y-5">
             <div>
               <label
                 htmlFor="username"

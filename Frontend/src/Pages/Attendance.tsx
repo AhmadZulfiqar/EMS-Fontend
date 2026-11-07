@@ -168,7 +168,7 @@ const Attendance: React.FC = () => {
     return diff;
   }
 
- 
+
   const handleClockIn = async () => {
     setLoading(true);
     const now = new Date();
@@ -188,7 +188,7 @@ const Attendance: React.FC = () => {
         setClockInTime(formatClock(now));
         setClockOutTime(null);
         setTotalHours("--");
-        fetchData(); 
+        fetchData();
         checkAttendance();
       }
     } catch (error: any) {
@@ -390,6 +390,8 @@ const Attendance: React.FC = () => {
           tableTotalPage={totalPage}
           tableTotalCount={totalCount}
           tablePageSize={pageSize}
+          tableName='Employee Attendance List'
+          searchPlaceHolder='eg: 02/07/2026'
 
         />
 

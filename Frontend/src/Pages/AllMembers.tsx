@@ -8,6 +8,7 @@ import DataTable from '../Components/Common/DataTable'
 import { EmployeeService } from '../Services/employeeservice'
 import { getApiError } from "../utils/errorHandler";
 import { getAllTableDataDto } from '../Components/Common/Models/EmployeeDto'
+import { input } from 'zod'
 
 interface Member {
     id: string;
@@ -69,8 +70,10 @@ const AllMembers = () => {
         { header: "Name", accessor: "name" },
         { header: "Email", accessor: "email" },
         { header: "Role", accessor: "roles" },
-
     ];
+    
+    
+
 
     if (loading) {
         return (
@@ -86,17 +89,23 @@ const AllMembers = () => {
     return (
         <div className="min-h-screen bg-slate-50 font-sans">
             <NavBar />
-            <DataTable
-                columns={columns}
-                tableData={members}
-                tableSearch={tableSearch}
-                onPageChange={onPageChange}
-                onPageSizeChange={onPageSizeChange}
-                tableCurrrntPage={currentPage}
-                tableTotalPage={totalPage}
-                tableTotalCount={totalCount}
-                tablePageSize={pageSize}
-            />
+            <div className='p-5 w-full'>
+
+                <DataTable
+                    columns={columns}
+                    tableData={members}
+                 
+                    tableSearch={tableSearch}
+                    onPageChange={onPageChange}
+                    onPageSizeChange={onPageSizeChange}
+                    tableCurrrntPage={currentPage}
+                    tableTotalPage={totalPage}
+                    tableTotalCount={totalCount}
+                    tablePageSize={pageSize}
+                    tableName='Members List'
+                    searchPlaceHolder='Search by name'
+                />
+            </div>
 
 
         </div>
